@@ -8,232 +8,250 @@
  * I acknowledge all content contained herein, excluding template 
  *		or example code, is my own original work.
  */ 
-
+/////////////////////////////////////////////////////////
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <stdlib.h>
-//#include "ucr/io.c"
-#include <stdio.h>
 
-#define A0 (~PINA & 0x01)
-
-volatile unsigned char TimerFlag = 0; // TimerISR() sets this to 1. C programmer should clear to 0.
-volatile unsigned char port_B = 0x00;
-unsigned char on_off = 0x00;
-// Internal variables for mapping AVR's ISR to our cleaner TimerISR model.
-unsigned long _avr_timer_M = 1; // Start count from here, down to 0. Default 1 ms.
-unsigned long _avr_timer_cntcurr = 0; // Current internal count of 1ms ticks
-
-
-const unsigned long PERIOD = 50;
-
-unsigned char SetBit(unsigned char pin, unsigned char number, unsigned char bin_value)
-{
-	return (bin_value ? pin | (0x01 << number) : pin & ~(0x01 << number));
-}
-
-
-
-
+volatile unsigned char TimerFlag = 0;
+unsigned long _avr_timer_M = 1;
+unsigned long _avr_timer_cntcurr = 0;
 
 void TimerOn() {
-	// AVR timer/counter controller register TCCR1
 	TCCR1B = 0x0B;
-	// AVR output compare register OCR1A.
-	OCR1A = 125;	// Timer interrupt will be generated when TCNT1==OCR1A
-	TIMSK1 = 0x02; // bit1: OCIE1A -- enables compare match interrupt
-
-	//Initialize avr counter
+	OCR1A = 125;
+	TIMSK1 = 0x02;
 	TCNT1=0;
-
 	_avr_timer_cntcurr = _avr_timer_M;
-	SREG |= 0x80; // 0x80: 1000000
+	SREG |= 0x80;
 }
 
 void TimerOff() {
-	TCCR1B = 0x00; // bit3bit1bit0=000: timer off
+	TCCR1B = 0x00;
 }
 
-
-typedef struct Task {
-	int state; // Task’s current state
-	unsigned long period; // Task period
-	unsigned long elapsedTime; // Time elapsed since last task tick
-	int (*TickFct)(int); // Task tick function
-} task;
-
-
-
-const unsigned char tasksSize = 3;
-task tasks[3];
-
-enum ToggleButtonStates {Start_On, PressOn, PressOff, On, Off};
-
-int ToggleButton(int state)
-{
-	switch(state)
-	{
-		case Start_On:
-		state = Off;
-		break;
-		case On:
-		state = A0 ? PressOff : On;
-		break;
-		case Off:
-		state = A0 ? PressOn : Off;
-		break;
-		case PressOn:
-		state =  A0 ? state : On;
-		break;
-		case PressOff:
-		state = A0 ? state : Off;
-		break;
-		default:
-		state = Start_On;
-		break;
-	}
-	switch(state)
-	{
-		case On:
-		on_off = 0x01;
-		break;
-		case Off:
-		on_off = 0x00;
-		break;
-	}
-	return state;
-}
-
-
-enum LightOneStates {Start_one, Light1, Light2, Light3};
-
-int LightStates(int state)
-{
-	switch(state)
-	{
-		case Start_one:
-		state = on_off ? state : Light1;
-		break;
-		case Light1:
-		state = on_off ? state : Light2;
-		break;
-		case Light2:
-		state = on_off ? state : Light3;
-		break;
-		case Light3:
-		state = on_off ? state : Light1;
-		break;
-		default:
-		state = Start_one;
-		break;
-	}
-	switch(state)
-	{
-		case Light1:
-		port_B = SetBit(port_B,2, 0);
-		port_B = SetBit(port_B, 0, 1);
-		break;
-		case Light2:
-		port_B = SetBit(port_B,0,0);
-		port_B = SetBit(port_B, 1, 1);
-		break;
-		case Light3:
-		port_B = SetBit(port_B,1,0);
-		port_B = SetBit(port_B, 2, 1);
-		break;
-		default:
-		port_B = port_B;
-	}
-	return state;
-}
-
-enum LightOn_OFFStates {Start, LightOn, LightOff};
-
-int LightOn_OFF(int state)
-{
-	switch(state)
-	{
-		case Start:
-		state = LightOn;
-		break;
-		case LightOn:
-		state = on_off ? state : LightOff;
-		break;
-		case LightOff:
-		state = on_off ? state : LightOn;
-		break;
-		default:
-		state = Start;
-	}
-	switch(state)
-	{
-		case LightOn:
-		port_B = SetBit(port_B,3,1);
-		break;
-		case LightOff:
-		port_B = SetBit(port_B, 3, 0);
-		break;
-		default:
-		port_B = port_B;
-	}
-	return state;
-}
-void TimerISR()
-{
-	unsigned char i;
-	for (i = 0;i < tasksSize;++i)
-	{
-		if ((tasks[i].elapsedTime >= tasks[i].period))
-		{
-			tasks[i].state = tasks[i].TickFct(tasks[i].state);
-			tasks[i].elapsedTime = 0;
-		}
-		tasks[i].elapsedTime += PERIOD;
-	}
+void TimerISR() {
+	TimerFlag = 1;
 }
 
 ISR(TIMER1_COMPA_vect) {
-	// CPU automatically calls when TCNT1 == OCR1 (every 1 ms per TimerOn settings)
-	_avr_timer_cntcurr--; // Count down to 0 rather than up to TOP
-	if (_avr_timer_cntcurr == 0) { // results in a more efficient compare
-		TimerISR(); // Call the ISR that the user uses
+	_avr_timer_cntcurr--;
+	if (_avr_timer_cntcurr == 0) {
+		TimerISR();
 		_avr_timer_cntcurr = _avr_timer_M;
 	}
 }
-
-// Set TimerISR() to tick every M ms
 void TimerSet(unsigned long M) {
 	_avr_timer_M = M;
 	_avr_timer_cntcurr = _avr_timer_M;
 }
 
+enum BL_States{BL_Start, BL_Blink} BL_state;
+enum TL_States{TL_Start, TL_Blink, TL_Blink_Again} TL_state;
+enum Butt_States{Butt_Start, Butt_Press, Butt_Hold, hold, Butt_press, Butt_hold} Butt_state;
+enum Combine_States{Com_Start, Com_Action} Com_states;
+
+unsigned char blinkingLED = 0x10;
+unsigned char threeLED = 0x04;
+unsigned char hold1 = 0x00;
+unsigned char hold2 = 0x00;
+unsigned char b = 0x00;
+
+void TickFct_BL(){
+	
+	/*blinkingLED = PORTB & 0x10;*/
+	
+	switch(BL_state){
+		case BL_Start:
+			BL_state = BL_Blink;
+			break;
+		case BL_Blink:
+			BL_state = BL_Start;;
+			break;
+		default:
+			BL_state = BL_Start;
+			break;
+	}
+	switch(BL_state){
+		case BL_Start:
+			blinkingLED = 0x01;
+			hold1 = blinkingLED;
+			break;
+		case BL_Blink:
+			blinkingLED = 0x00;
+			hold1 = blinkingLED;
+			break;
+		default:
+			break;
+	}
+}
+void TickFct_TL(){
+	
+	/*threeLED = PORTB & 0x07;*/
+	
+	switch(TL_state){
+		case TL_Start:
+			TL_state = TL_Blink;
+			break;
+		case TL_Blink:
+			TL_state = TL_Blink_Again;
+			break;
+		case TL_Blink_Again:
+			TL_state = TL_Start;
+			break;
+		default:
+			TL_state = TL_Start;
+			break;
+	}
+	switch(TL_state){
+		case TL_Start:
+			threeLED = 0x01;
+			hold2 = threeLED;
+			break;
+		case TL_Blink:
+			threeLED = 0x02;
+			hold2 = threeLED;
+			break;
+		case TL_Blink_Again:
+			threeLED = 0x04;
+			hold2 = threeLED;
+			break;
+		default:
+			break;
+	}
+}
+void TickFct_Butt(){
+	
+	b = PINA & 0x01;
+	
+	switch(Butt_state){
+		case Butt_Start:
+		if(!b){
+			Butt_state = Butt_Press;
+			break;
+		}
+		else{
+			Butt_state = Butt_Start;
+			break;
+		}
+		case Butt_Press:
+			Butt_state = Butt_Hold;
+			break;
+		case Butt_Hold:
+			if(b){
+				Butt_state = Butt_Hold;
+				break;
+			}
+			else{
+				Butt_state = hold;
+			}
+		case hold:
+			if(!b){
+				Butt_state = hold;
+				break;
+			}
+			else{
+				Butt_state = Butt_press;
+				break;
+			}
+		case Butt_press:
+			Butt_state = Butt_hold;
+			break;
+		case Butt_hold:
+			if(b){
+				Butt_state = Butt_hold;
+				break;
+			}
+			else{
+				Butt_state = Butt_Start;
+				break;
+			}
+		default:
+			Butt_state = Butt_Start;
+			break;
+	}
+	switch(Butt_state){
+		case Butt_Start:
+			PORTB = (blinkingLED << 4) | threeLED;
+			break;
+		case Butt_Press:
+			break;
+		case Butt_Hold:
+			break;
+		case hold:
+			PORTB = (hold1 << 4) | hold2;
+			break;
+		case Butt_press:
+			break;
+		case Butt_hold:
+			break;
+		default:
+			break;
+	}
+}
+void Combine_Fct(){
+	b = PINA & 0x01;
+	switch(Com_states){
+		case Com_Start:
+			Com_states = Com_Action;
+			break;
+		case Com_Action:
+			Com_states = Com_Action;
+			break;
+		default:
+			Com_states = Com_Start;
+			break;
+	}
+	switch(Com_states){
+		case Com_Start:
+			break;
+		case Com_Action:
+			PORTB = (blinkingLED << 4) | threeLED;
+			break;
+		default:
+			break;
+	}
+}
+
 
 int main(void)
 {
+	DDRA = 0x00; PORTA = 0xFF;
 	DDRB = 0xFF; PORTB = 0x00;
-	DDRA = 0xF0; PORTA = 0x0F;
-	DDRC = 0xFF; PORTC = 0x00;
-	DDRD = 0xFF; PORTD = 0x00;
-	unsigned char i = 0;
-	tasks[i].state = Start_one;
-	tasks[i].period = 500;
-	tasks[i].elapsedTime = 0;
-	tasks[i].TickFct = &LightStates;
-	i++;
-	tasks[i].state = Start;
-	tasks[i].period = 1000;
-	tasks[i].elapsedTime = 0;
-	tasks[i].TickFct = &LightOn_OFF;
-	i++;
-	tasks[i].state = Start_On;
-	tasks[i].period = 50;
-	tasks[i].elapsedTime = 0;
-	tasks[i].TickFct = &ToggleButton;
-	TimerSet(PERIOD);
+	
+	unsigned long BL_elapsedTime = 0;
+	unsigned long TL_elapsedTime = 0;
+	unsigned long Butt_elapsedTime = 0;
+	const unsigned long timerPeriod = 100;
+	
+	TimerSet(timerPeriod);
 	TimerOn();
-	while(1)
-	{
-		PORTB = port_B;
+	
+	PORTB = blinkingLED | threeLED;
+	
+	BL_state = BL_Start;
+	TL_state = TL_Start;
+	Butt_state = Butt_Start;
+	Com_states = Com_Start;
+
+	while(1){
+		if(BL_elapsedTime >= 1000){
+			TickFct_BL();
+			BL_elapsedTime = 0;
+		}
+		if(TL_elapsedTime >= 300){
+			TickFct_TL();
+			TL_elapsedTime = 0;
+		}
+		if(Butt_elapsedTime >= 2){
+			TickFct_Butt();
+			Butt_elapsedTime = 0;
+		}
+		/*Combine_Fct();*/
+		/*PORTB = (blinkingLED << 4) | threeLED;*/
+		while(!TimerFlag){}
+		TimerFlag = 0;
+		BL_elapsedTime += timerPeriod;
+		TL_elapsedTime += timerPeriod;
+		Butt_elapsedTime += 1;
 	}
-	return 0;
 }
