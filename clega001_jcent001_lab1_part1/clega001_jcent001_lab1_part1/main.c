@@ -47,26 +47,27 @@ void TimerSet(unsigned long M) {
 
 enum BL_States{BL_Start, BL_Blink} BL_state;
 enum TL_States{TL_Start, TL_Blink, TL_Blink_Again} TL_state;
-enum Butt_States{Butt_Start, Butt_Press, Butt_Hold, hold, Butt_press, Butt_hold} Butt_state;
+enum Butt_States{Butt_Start, on, off, press_on, press_off} Butt_state;
 enum Combine_States{Com_Start, Com_Action} Com_states;
 
 unsigned char blinkingLED = 0x10;
 unsigned char threeLED = 0x04;
-unsigned char hold1 = 0x00;
-unsigned char hold2 = 0x00;
+unsigned char bbb = 0x00;
 unsigned char b = 0x00;
 
 void TickFct_BL(){
-	
-	/*blinkingLED = PORTB & 0x10;*/
-	
+
 	switch(BL_state){
 		case BL_Start:
-			BL_state = BL_Blink;
-			break;
+			if(bbb){BL_state = BL_Start; break;}
+				else{
+					BL_state = BL_Blink; break;
+				}
 		case BL_Blink:
-			BL_state = BL_Start;;
-			break;
+			if(bbb){BL_state = BL_Blink; break;}
+				else{
+					BL_state = BL_Start; break;
+				}
 		default:
 			BL_state = BL_Start;
 			break;
@@ -74,11 +75,9 @@ void TickFct_BL(){
 	switch(BL_state){
 		case BL_Start:
 			blinkingLED = 0x01;
-			hold1 = blinkingLED;
 			break;
 		case BL_Blink:
 			blinkingLED = 0x00;
-			hold1 = blinkingLED;
 			break;
 		default:
 			break;
@@ -86,18 +85,22 @@ void TickFct_BL(){
 }
 void TickFct_TL(){
 	
-	/*threeLED = PORTB & 0x07;*/
-	
 	switch(TL_state){
 		case TL_Start:
-			TL_state = TL_Blink;
-			break;
+			if(bbb){TL_state = TL_Start; break;}
+				else{
+					TL_state = TL_Blink; break;
+				}
 		case TL_Blink:
-			TL_state = TL_Blink_Again;
-			break;
+			if(bbb){TL_state = TL_Blink; break;}
+				else{
+					TL_state = TL_Blink_Again; break;
+				}
 		case TL_Blink_Again:
-			TL_state = TL_Start;
-			break;
+			if(bbb){TL_state = TL_Blink_Again; break;}
+				else{
+					TL_state = TL_Start; break;
+				}
 		default:
 			TL_state = TL_Start;
 			break;
@@ -105,15 +108,12 @@ void TickFct_TL(){
 	switch(TL_state){
 		case TL_Start:
 			threeLED = 0x01;
-			hold2 = threeLED;
 			break;
 		case TL_Blink:
 			threeLED = 0x02;
-			hold2 = threeLED;
 			break;
 		case TL_Blink_Again:
 			threeLED = 0x04;
-			hold2 = threeLED;
 			break;
 		default:
 			break;
@@ -123,95 +123,48 @@ void TickFct_Butt(){
 	
 	b = PINA & 0x01;
 	
+	
 	switch(Butt_state){
 		case Butt_Start:
-		if(!b){
-			Butt_state = Butt_Press;
+			Butt_state = off;
 			break;
-		}
-		else{
-			Butt_state = Butt_Start;
-			break;
-		}
-		case Butt_Press:
-			Butt_state = Butt_Hold;
-			break;
-		case Butt_Hold:
-			if(b){
-				Butt_state = Butt_Hold;
-				break;
-			}
-			else{
-				Butt_state = hold;
-			}
-		case hold:
-			if(!b){
-				Butt_state = hold;
-				break;
-			}
-			else{
-				Butt_state = Butt_press;
-				break;
-			}
-		case Butt_press:
-			Butt_state = Butt_hold;
-			break;
-		case Butt_hold:
-			if(b){
-				Butt_state = Butt_hold;
-				break;
-			}
-			else{
-				Butt_state = Butt_Start;
-				break;
-			}
+		case off:
+			if(!b){Butt_state = press_on; break;}
+				else{
+					Butt_state = off; break;
+				}
+		case press_on:
+			if(!b){Butt_state = press_on; break;}
+				else{
+					Butt_state = on; break;
+				}
+		case on:
+			if(!b){Butt_state = press_off; break;}
+				else{
+					Butt_state = on; break;
+				}
+		case press_off:
+			if(!b){Butt_state = press_on; break;}
+				else{
+					Butt_state = off; break;
+				}
 		default:
 			Butt_state = Butt_Start;
 			break;
 	}
 	switch(Butt_state){
-		case Butt_Start:
-			PORTB = (blinkingLED << 4) | threeLED;
+		case on:
+			bbb = 0x01;
+			PORTB = bbb;
 			break;
-		case Butt_Press:
-			break;
-		case Butt_Hold:
-			break;
-		case hold:
-			PORTB = (hold1 << 4) | hold2;
-			break;
-		case Butt_press:
-			break;
-		case Butt_hold:
+		case off:
+			bbb = 0x00;
+			PORTB = bbb;
 			break;
 		default:
 			break;
 	}
 }
-void Combine_Fct(){
-	b = PINA & 0x01;
-	switch(Com_states){
-		case Com_Start:
-			Com_states = Com_Action;
-			break;
-		case Com_Action:
-			Com_states = Com_Action;
-			break;
-		default:
-			Com_states = Com_Start;
-			break;
-	}
-	switch(Com_states){
-		case Com_Start:
-			break;
-		case Com_Action:
-			PORTB = (blinkingLED << 4) | threeLED;
-			break;
-		default:
-			break;
-	}
-}
-
 
 int main(void)
 {
@@ -238,16 +191,15 @@ int main(void)
 			TickFct_BL();
 			BL_elapsedTime = 0;
 		}
-		if(TL_elapsedTime >= 300){
+		if(TL_elapsedTime >= 500){
 			TickFct_TL();
 			TL_elapsedTime = 0;
 		}
-		if(Butt_elapsedTime >= 2){
+		if(Butt_elapsedTime >= 1){
 			TickFct_Butt();
 			Butt_elapsedTime = 0;
 		}
-		/*Combine_Fct();*/
-		/*PORTB = (blinkingLED << 4) | threeLED;*/
+		PORTB = (blinkingLED << 3) | threeLED;
 		while(!TimerFlag){}
 		TimerFlag = 0;
 		BL_elapsedTime += timerPeriod;
