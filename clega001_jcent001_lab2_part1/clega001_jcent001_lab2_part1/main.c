@@ -58,7 +58,7 @@ int SM1Tick(int state){
 	switch(state){
 		case start:
 			state = on; break;
-		case on:
+		case on:	
 			state = off; break;
 		case off:
 			state = on; break;
@@ -70,11 +70,21 @@ int SM1Tick(int state){
 			break;
 		case on:
 			PORTA = 0x01; 
-			USART_Send(0x01, 0);
+			
+			if(!USART_IsSendReady(0)){PORTB = 0x01;}
+			else{
+			USART_Send(0x01,0);
+			PORTB = 0x02;
+			}
 			break;
 		case off:
 			PORTA = 0x00; 
-			USART_Send(0x00, 0);
+			
+			if(!USART_IsSendReady(0)){PORTB = 0x01;}
+			else{
+			USART_Send(0x00,0);
+			PORTB = 0x02;
+			}
 			break;
 		default:
 			break;
@@ -131,6 +141,7 @@ int main()
 		
 		//initialize USART
 		initUSART(0);
+		USART_Flush(0);
 		
 		for ( i = 0; i < numTasks; i++ ) {
 			if ( tasks[i]->elapsedTime == tasks[i]->period ) {
@@ -141,7 +152,6 @@ int main()
 			/*PORTA = 0x01;*/
 			
 		}
-		//ScoreKeeper(point);
 		while(!TimerFlag);
 		TimerFlag = 0;
 	}
