@@ -18,40 +18,43 @@
 #include <stdbool.h>
 #include <alloca.h>
 #include <stdlib.h>
+#include "io.c"
 #include "usart_ATmega1284.h"
 
 //--------Find GCD function --------------------------------------------------
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
 {
-    unsigned long int c;
-    while(1){
-        c = a%b;
-        if(c==0){return b;}
-        a = b;
-b = c;
-    }
-    return 0;
+	unsigned long int c;
+	while(1){
+		c = a%b;
+		if(c==0){return b;}
+		a = b;
+		b = c;
+	}
+	return 0;
 }
 //--------End find GCD function ----------------------------------------------
 
+
+
 //--------Task scheduler data structure---------------------------------------
 typedef struct _task {
-    signed char state;
-    unsigned long int period;
-    unsigned long int elapsedTime;
-    int (*TickFct)(int); 
+	signed char state;
+	unsigned long int period;
+	unsigned long int elapsedTime;
+	int (*TickFct)(int);
 } task;
-//--------End Task scheduler data structure-----------------------------------
 
+//--------End Task scheduler data structure-----------------------------------
 //--------Shared/Global Variables----------------------------------------------------
-//
+
 //--------End Shared/Global Variables------------------------------------------------
 
 //--------User defined FSMs---------------------------------------------------
-
-//Master USART
+//Button
 enum SM1_States{start, on, off};
 int SM1Tick(int state){
+	
 	switch(state){
 		case start:
 			state = on; break;
@@ -60,78 +63,87 @@ int SM1Tick(int state){
 		case off:
 			state = on; break;
 		default:
-			break;
+			state = start; break;
 	}
 	switch(state){
 		case start:
 			break;
 		case on:
-			USART_Send(0x01, 0); 
-			PORTA = 0x01; break;
+			PORTA = 0x01; 
+			USART_Send(0x01, 0);
+			break;
 		case off:
-			USART_Send(0x00, 0); 
-			PORTA = 0x01; break;
+			PORTA = 0x00; 
+			USART_Send(0x00, 0);
+			break;
 		default:
 			break;
 	}
 	return state;
-	
-	//testing something here
-	
 }
+
 
 // --------END User defined FSMs-----------------------------------------------
 
 // Implement scheduler code from PES.
 int main()
 {
-DDRA = 0xFF; PORTA = 0x00;
+	DDRA = 0xFF; PORTA = 0x00;
+	DDRB = 0xFF; PORTB = 0x00;
+	DDRC = 0xFF; PORTC = 0x00;
+	DDRD = 0xFF; PORTD = 0x00;
 
-
-// Period for the tasks
-unsigned long int SMTick1_calc = 500;
-
-//Calculating GCD
-unsigned long int tmpGCD = 1;
-//tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
-
-//Greatest common divisor for all tasks or smallest time unit for tasks.
-unsigned long int GCD = tmpGCD;
-
-//Recalculate GCD periods for scheduler
-unsigned long int SMTick1_period = SMTick1_calc/GCD;
-
-
-//Declare an array of tasks 
-static task task1;
-task *tasks[] = {&task1};
-const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
-
-// Task 1
-task1.state = -1;//Task initial state.
-task1.period = SMTick1_period;//Task Period.
-task1.elapsedTime = SMTick1_period;//Task current elapsed time.
-task1.TickFct = &SM1Tick;//Function pointer for the tick.
-
-// Set the timer and turn it on
-TimerSet(GCD);
-TimerOn();
-
-unsigned short i;
-while(1) {
 	
-	//initialize USART
-	initUSART(0); //initUSART(1);
+
+	// Period for the tasks
+	unsigned long int SMTick1_calc = 500;
 	
-    for ( i = 0; i < numTasks; i++ ) {   
-        if ( tasks[i]->elapsedTime == tasks[i]->period ) {
-            tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
-            tasks[i]->elapsedTime = 0;
-        }
-        tasks[i]->elapsedTime += 1;
-    }
+
+	//Calculating GCD
+	unsigned long int tmpGCD = 1;
+// 	tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
+// 	tmpGCD = findGCD(tmpGCD, SMTIck3_calc);
+
+	//Greatest common divisor for all tasks or smallest time unit for tasks.
+	unsigned long int GCD = tmpGCD;
+
+	//Recalculate GCD periods for scheduler
+	unsigned long int SMTick1_period = SMTick1_calc/GCD;
+
+	//Declare an array of tasks
+	static task task1;
+	task *tasks[] = {&task1};
+	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
+
+	// Task 1
+	task1.state = -1;//Task initial state.
+	task1.period = SMTick1_period;//Task Period.
+	task1.elapsedTime = SMTick1_period;//Task current elapsed time.
+	task1.TickFct = &SM1Tick;//Function pointer for the tick.
+
+
+	// Set the timer and turn it on
+	TimerSet(GCD);
+	TimerOn();
+	
+	unsigned short i;
+	while(1) {
+		
+		//initialize USART
+		initUSART(0);
+		
+		for ( i = 0; i < numTasks; i++ ) {
+			if ( tasks[i]->elapsedTime == tasks[i]->period ) {
+				tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
+				tasks[i]->elapsedTime = 0;
+			}
+			tasks[i]->elapsedTime += 1;
+			/*PORTA = 0x01;*/
+			
+		}
+		//ScoreKeeper(point);
 		while(!TimerFlag);
-	TimerFlag = 0;
-}
-return 0;
+		TimerFlag = 0;
+	}
+	return 0;
 }
