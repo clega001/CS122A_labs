@@ -1,9 +1,8 @@
 /*
  * Christian Legaspino (clega001@ucr.edu) & Joshua Centeno (jcent001@ucr.edu)
  * Lab Section: 23
- * Assignment: Lab 1 Exercise 1
- * Lab Description: Three LEDs blink sequentially at 500ms. A single LED blinks for every 1000ms. A button is added, once pressed, the three blinking
- *					LEDs are paused.
+ * Assignment: Lab 2 Exercise 1
+ * Lab Description: 
  * 
  * I acknowledge all content contained herein, excluding template 
  *		or example code, is my own original work.
@@ -19,6 +18,7 @@
 #include <stdbool.h>
 #include <alloca.h>
 #include <stdlib.h>
+#include "usart_ATmega1284.h"
 
 //--------Find GCD function --------------------------------------------------
 unsigned long int findGCD(unsigned long int a, unsigned long int b)
@@ -41,123 +41,70 @@ typedef struct _task {
     unsigned long int elapsedTime;
     int (*TickFct)(int); 
 } task;
-
 //--------End Task scheduler data structure-----------------------------------
+
 //--------Shared/Global Variables----------------------------------------------------
-unsigned char s = 0x00;
-#define a (PINA & 0x01)
-unsigned char b_light = 0x00;
-unsigned char t_light = 0x00;
+//
 //--------End Shared/Global Variables------------------------------------------------
 
 //--------User defined FSMs---------------------------------------------------
-//Button
-enum SM1_States{start, on, off, p_on, p_off};
+
+//Master USART
+enum SM1_States{start, on, off};
 int SM1Tick(int state){
 	switch(state){
 		case start:
-			state = off; break;
+			state = on; break;
 		case on:
-			state = !a ? p_off : on; break;
+			state = off; break;
 		case off:
-			state = !a ? p_on : off; break;
-		case p_on:
-			state = !a ? state : on; break;
-		case p_off:
-			state = !a ? state : off; break;
+			state = on; break;
 		default:
-			state = start; break;
+			break;
 	}
 	switch(state){
+		case start:
+			break;
 		case on:
-			s = 0x01; break;
+			USART_Send(0x01, 0); 
+			PORTA = 0x01; break;
 		case off:
-			s = 0x00; break;
+			USART_Send(0x00, 0); 
+			PORTA = 0x01; break;
 		default:
 			break;
 	}
 	return state;
+	
+	//testing something here
+	
 }
 
-
-//Blinking Light
-enum SM2_States{b_start, b_on, b_off};
-int SM2Tick(int state){
-	switch(state){
-		case b_start:
-			state = b_on; break;
-		case b_on:
-			state = s ? state : b_off; break;
-		case b_off:
-			state = s ? state : b_on; break;
-		default:
-			state = b_start; break;
-	}
-	switch(state){
-		case b_on:
-			b_light = 0x08; break;
-		case b_off:
-			b_light = 0x00; break;
-	}
-	return state;
-}
-
-
-//Three LED 
-enum SM3_States{t_start, t1, t2, t3};	
-int SM3Tick(int state){
-	switch(state){
-		case t_start:
-			state = t1; break;
-		case t1:
-			state = s ? state : t2; break;
-		case t2:
-			state = s ? state : t3; break;
-		case t3:
-			state = s ? state : t1; break;
-		default:
-			state = t_start; break;
-	}
-	switch(state){
-		case t1:
-			t_light = 0x01; break;
-		case t2:
-			t_light = 0x02; break;
-		case t3:
-			t_light = 0x04; break;
-	}
-	return state;
-}
 // --------END User defined FSMs-----------------------------------------------
 
 // Implement scheduler code from PES.
 int main()
 {
-DDRA = 0x00; PORTA = 0xFF;
-DDRB = 0xFF; PORTB = 0x00;
+DDRA = 0xFF; PORTA = 0x00;
+
 
 // Period for the tasks
-unsigned long int SMTick1_calc = 50;
-unsigned long int SMTick2_calc = 1000;
-unsigned long int SMTIck3_calc = 500;
+unsigned long int SMTick1_calc = 500;
 
 //Calculating GCD
 unsigned long int tmpGCD = 1;
-tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
-tmpGCD = findGCD(tmpGCD, SMTIck3_calc);
+//tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
 
 //Greatest common divisor for all tasks or smallest time unit for tasks.
 unsigned long int GCD = tmpGCD;
 
 //Recalculate GCD periods for scheduler
 unsigned long int SMTick1_period = SMTick1_calc/GCD;
-unsigned long int SMTIck2_period = SMTick2_calc/GCD;
-unsigned long int SMTick3_period = SMTIck3_calc/GCD;
 
 
 //Declare an array of tasks 
-static task task1, task2, task3;
-task *tasks[] = {&task1, &task2, &task3};
+static task task1;
+task *tasks[] = {&task1};
 const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
 // Task 1
@@ -166,31 +113,22 @@ task1.period = SMTick1_period;//Task Period.
 task1.elapsedTime = SMTick1_period;//Task current elapsed time.
 task1.TickFct = &SM1Tick;//Function pointer for the tick.
 
-// Task 2
-task2.state = -1;
-task2.period = SMTIck2_period;
-task2.elapsedTime = SMTIck2_period;
-task2.TickFct = &SM2Tick;
-
-//Task 3
-task3.state = -1;
-task3.period = SMTick3_period;
-task3.elapsedTime = SMTick3_period;
-task3.TickFct = &SM3Tick;
-
 // Set the timer and turn it on
 TimerSet(GCD);
 TimerOn();
 
 unsigned short i;
 while(1) {
+	
+	//initialize USART
+	initUSART(0); //initUSART(1);
+	
     for ( i = 0; i < numTasks; i++ ) {   
         if ( tasks[i]->elapsedTime == tasks[i]->period ) {
             tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
             tasks[i]->elapsedTime = 0;
         }
         tasks[i]->elapsedTime += 1;
-		PORTB = b_light | t_light;
     }
 		while(!TimerFlag);
 	TimerFlag = 0;
