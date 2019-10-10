@@ -3,31 +3,31 @@ clega001_jcent001_lab2_part1.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000004  00800100  00000356  000003ea  2**0
+  0 .data         00000004  00800100  0000035c  000003f0  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  1 .text         00000356  00000000  00000000  00000094  2**1
+  1 .text         0000035c  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .bss          00000010  00800104  00800104  000003ee  2**0
+  2 .bss          00000010  00800104  00800104  000003f4  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  000003ee  2**0
+  3 .comment      00000030  00000000  00000000  000003f4  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000420  2**2
+  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000424  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 000000d8  00000000  00000000  00000460  2**0
+  5 .debug_aranges 000000d8  00000000  00000000  00000464  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00000f73  00000000  00000000  00000538  2**0
+  6 .debug_info   00000f7c  00000000  00000000  0000053c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 000009cd  00000000  00000000  000014ab  2**0
+  7 .debug_abbrev 000009cd  00000000  00000000  000014b8  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   000007a4  00000000  00000000  00001e78  2**0
+  8 .debug_line   000007ae  00000000  00000000  00001e85  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  000001dc  00000000  00000000  0000261c  2**2
+  9 .debug_frame  000001dc  00000000  00000000  00002634  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    0000061d  00000000  00000000  000027f8  2**0
+ 10 .debug_str    0000061d  00000000  00000000  00002810  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    0000065f  00000000  00000000  00002e15  2**0
+ 11 .debug_loc    0000065f  00000000  00000000  00002e2d  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 000000c8  00000000  00000000  00003474  2**0
+ 12 .debug_ranges 000000c8  00000000  00000000  0000348c  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -116,7 +116,7 @@ Disassembly of section .text:
   98:	11 e0       	ldi	r17, 0x01	; 1
   9a:	a0 e0       	ldi	r26, 0x00	; 0
   9c:	b1 e0       	ldi	r27, 0x01	; 1
-  9e:	e6 e5       	ldi	r30, 0x56	; 86
+  9e:	ec e5       	ldi	r30, 0x5C	; 92
   a0:	f3 e0       	ldi	r31, 0x03	; 3
   a2:	00 e0       	ldi	r16, 0x00	; 0
   a4:	0b bf       	out	0x3b, r16	; 59
@@ -141,7 +141,7 @@ Disassembly of section .text:
   be:	b2 07       	cpc	r27, r18
   c0:	e1 f7       	brne	.-8      	; 0xba <.do_clear_bss_loop>
   c2:	f4 d0       	rcall	.+488    	; 0x2ac <main>
-  c4:	46 c1       	rjmp	.+652    	; 0x352 <_exit>
+  c4:	49 c1       	rjmp	.+658    	; 0x358 <_exit>
 
 000000c6 <__bad_interrupt>:
   c6:	9c cf       	rjmp	.-200    	; 0x0 <__vectors>
@@ -330,8 +330,8 @@ Disassembly of section .text:
  26c:	81 e0       	ldi	r24, 0x01	; 1
  26e:	90 e0       	ldi	r25, 0x00	; 0
  270:	08 95       	ret
- 272:	60 e0       	ldi	r22, 0x00	; 0
- 274:	81 e0       	ldi	r24, 0x01	; 1
+ 272:	82 b1       	in	r24, 0x02	; 2
+ 274:	60 e0       	ldi	r22, 0x00	; 0
  276:	d8 df       	rcall	.-80     	; 0x228 <USART_Send>
  278:	82 e0       	ldi	r24, 0x02	; 2
  27a:	85 b9       	out	0x05, r24	; 5
@@ -347,8 +347,8 @@ Disassembly of section .text:
  290:	82 e0       	ldi	r24, 0x02	; 2
  292:	90 e0       	ldi	r25, 0x00	; 0
  294:	08 95       	ret
- 296:	60 e0       	ldi	r22, 0x00	; 0
- 298:	80 e0       	ldi	r24, 0x00	; 0
+ 296:	82 b1       	in	r24, 0x02	; 2
+ 298:	60 e0       	ldi	r22, 0x00	; 0
  29a:	c6 df       	rcall	.-116    	; 0x228 <USART_Send>
  29c:	82 e0       	ldi	r24, 0x02	; 2
  29e:	85 b9       	out	0x05, r24	; 5
@@ -479,20 +479,24 @@ int main()
  33e:	9e 83       	std	Y+6, r25	; 0x06
  340:	af 83       	std	Y+7, r26	; 0x07
  342:	b8 87       	std	Y+8, r27	; 0x08
- 344:	80 91 13 01 	lds	r24, 0x0113	; 0x800113 <TimerFlag>
 			/*PORTA = 0x01;*/
+			USART_Send(PORTA,0);
+ 344:	82 b1       	in	r24, 0x02	; 2
+ 346:	60 e0       	ldi	r22, 0x00	; 0
+ 348:	6f df       	rcall	.-290    	; 0x228 <USART_Send>
+ 34a:	80 91 13 01 	lds	r24, 0x0113	; 0x800113 <TimerFlag>
 			
 		}
 		while(!TimerFlag);
- 348:	88 23       	and	r24, r24
- 34a:	e1 f3       	breq	.-8      	; 0x344 <main+0x98>
- 34c:	10 92 13 01 	sts	0x0113, r1	; 0x800113 <TimerFlag>
+ 34e:	88 23       	and	r24, r24
+ 350:	e1 f3       	breq	.-8      	; 0x34a <main+0x9e>
+ 352:	10 92 13 01 	sts	0x0113, r1	; 0x800113 <TimerFlag>
 		TimerFlag = 0;
- 350:	d1 cf       	rjmp	.-94     	; 0x2f4 <main+0x48>
+ 356:	ce cf       	rjmp	.-100    	; 0x2f4 <main+0x48>
 
-00000352 <_exit>:
+00000358 <_exit>:
 	}
- 352:	f8 94       	cli
+ 358:	f8 94       	cli
 
-00000354 <__stop_program>:
- 354:	ff cf       	rjmp	.-2      	; 0x354 <__stop_program>
+0000035a <__stop_program>:
+ 35a:	ff cf       	rjmp	.-2      	; 0x35a <__stop_program>
