@@ -1,16 +1,8 @@
+
 /*
  * Christian Legaspino (clega001@ucr.edu) & Joshua Centeno (jcent001@ucr.edu)
  * Lab Section: 23
- * Assignment: Lab 2 Exercise 2
- * Lab Description: Add a button to toggle micro controller between master and servant. 
- * 
- * I acknowledge all content contained herein, excluding template 
- *		or example code, is my own original work.
- */ 
-/*
- * Christian Legaspino (clega001@ucr.edu) & Joshua Centeno (jcent001@ucr.edu)
- * Lab Section: 23
- * Assignment: Lab 2 Exercise 2
+ * Assignment: Lab 2 Exercise 1 Server
  * Lab Description: Add a button to toggle micro controller between master and servant. 
  * 
  * I acknowledge all content contained herein, excluding template 

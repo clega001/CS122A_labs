@@ -14,20 +14,30 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-//Global Variables
-unsigned char Master_Servant; //1 if master, 0 is servant
-unsigned char count; //Counter
+ 
 volatile unsigned char TimerFlag = 0; // TimerISR() sets this to 1. C programmer should clear to 0.
 unsigned long _avr_timer_M = 1; // Start count from here, down to 0. Default 1 ms.
 unsigned long _avr_timer_cntcurr = 0; // Current internal count of 1ms ticks
-const unsigned long PERIOD = 100; //Preset Period
-#define B0 (~PINB & 0x01)
+const unsigned long p = 100;
+
 
 unsigned char SetBit(unsigned char pin, unsigned char number, unsigned char bin_value)
 {
 	return (bin_value ? pin | (0x01 << number) : pin & ~(0x01 << number));
 }
+
+unsigned long int findGCD(unsigned long int a, unsigned long int b)
+{
+	unsigned long int c;
+	while(1){
+		c = a%b;
+		if(c==0){return b;}
+		a = b;
+		b = c;
+	}
+	return 0;
+}
+
 void TimerOn() {
 	// AVR timer/counter controller register TCCR1
 	TCCR1B = 0x0B;
@@ -65,7 +75,7 @@ void TimerISR()
 			tasks[i].state = tasks[i].TickFct(tasks[i].state);
 			tasks[i].elapsedTime = 0;
 		}
-		tasks[i].elapsedTime += PERIOD;
+		tasks[i].elapsedTime += p;
 	}
 }
 ISR(TIMER1_COMPA_vect) {
@@ -81,88 +91,88 @@ void TimerSet(unsigned long M) {
 	_avr_timer_cntcurr = _avr_timer_M;
 }
 
+unsigned char cnt = 0x00;
+unsigned char s = 0x00;
+unsigned long p = 100;
+
+
 enum follower {f_start, wait};
 int Follower(int state){
-	// 	switch(state){
-	// 		case f_start:
-	// 		state = wait; break;
-	// 		case wait:
-	// 		state = wait; break;
-	// 		default:
-	// 		state = f_start; break;
-	// 	}
-	// 	switch(state){
-	// 		case f_start:
-	// 		break;
-	// 		case wait:
-	if(USART_HasReceived(0)){
-		PORTA = USART_Receive(0);
-		USART_Flush(0);
-		count = 0x00;
-		}else{
-		count++;
+	switch(state){
+		case f_start:
+			state = wait; break;
+		case wait:
+			state = wait; break;
+		default:
+			state = f_start; break;
 	}
-	/*		}*/
+	switch(state){
+		case f_start:
+			break;
+		case wait:
+			if(USART_HasReceived(0)){
+				PORTA = USART_Receive(0);
+				USART_Flush(0);
+				cnt = 0x00;
+			}else{cnt++;}
+	}
 	return state;
 }
 
-enum master {Start, BSS_Low, BSS_High};
+enum master {m_start, on, off};
 int Master(int state){
 	switch(state){
-		case Start:
-		state = BSS_Low;
-		break;
-		case BSS_Low:
-		state = BSS_High;
-		break;
-		case BSS_High:
-		state = BSS_Low;
-		break;
+		case m_start:
+			state = on;
+			break;
+		case on:
+			state = off;
+			break;
+		case off:
+			state = on;
+			break;
 		default:
-		state = Start;
-		break;
+			state = m_start;
+			break;
 	}
 	switch(state){
-		case BSS_Low:
-		PORTA = 0x00;
-		count = 0;
-		
-		if(USART_HasReceived(0)){
-			TimerOff();
-			Master_Servant = 0x00;
-			tasks[0].state = Start;
-			tasks[0].period = 100;
-			tasks[0].elapsedTime = 0;
-			tasks[0].TickFct = &Follower;
-			TimerSet(PERIOD);
-			TimerOn();
-		}
-		
-		break;
-		case BSS_High:
-		PORTA = 0x01;
-		count = 0;
-		
-		if(USART_HasReceived(0)){
-			TimerOff();
-			Master_Servant = 0x00;
-			tasks[0].state = Start;
-			tasks[0].period = 100;
-			tasks[0].elapsedTime = 0;
-			tasks[0].TickFct = &Follower;
-			TimerSet(PERIOD);
-			TimerOn();
-		}
-		
-		
-		break;
+		case off:
+			PORTA = 0x00;
+			USART_Send(PORTA, 1);
+			cnt = 0;
+			if(USART_HasReceived(0)){
+				TimerOff();
+				s = 0x00;
+				tasks[0].state = f_start;
+				tasks[0].period = 100;
+				tasks[0].elapsedTime = 0;
+				tasks[0].TickFct = &Follower;
+				TimerSet(p);
+				TimerOn();
+			}
+			break;
+		case on:
+			PORTA = 0x01;
+			USART_Send(PORTA, 1);
+			cnt = 0;
+			if(USART_HasReceived(0)){
+				TimerOff();
+				s = 0x00;
+				tasks[0].state = f_start;
+				tasks[0].period = 100;
+				tasks[0].elapsedTime = 0;
+				tasks[0].TickFct = &Follower;
+				TimerSet(p);
+				TimerOn();
+			}
+			break;
 		default:
-		PORTA = 0x00;
-		break;
+			PORTA = 0x00;
+			break;
 	}
-	USART_Send(PORTA, 1);
 	return state;
 }
+
 
 int main(void)
 {
@@ -170,29 +180,33 @@ int main(void)
 	DDRB = 0x00; PORTB = 0xFF;
 	DDRC = 0xFF; PORTC = 0x00;
 
-	Master_Servant = 0x00;
 	initUSART(0);
 	initUSART(1);
 
-	tasks[0].state = Start;
+
+	s = 0x00;
+	tasks[0].state = f_start;
 	tasks[0].period = 100;
 	tasks[0].elapsedTime = 0;
 	tasks[0].TickFct = &Follower;
 	
-	TimerSet(PERIOD);
+	
+	unsigned char tmp = findGCD(1000,100);
+	
+	TimerSet(tmp);
 	TimerOn();
 	while (1)
 	{
-		PORTC = Master_Servant;
-		if(count > 30 && !Master_Servant)
+		PORTC = s;
+		if(cnt > 30 && !s)
 		{
 			TimerOff();
-			Master_Servant = 0x01;
-			tasks[0].state = Start;
+			s = 0x01;
+			tasks[0].state = m_start;
 			tasks[0].period = 1000;
 			tasks[0].elapsedTime = 0;
 			tasks[0].TickFct = &Master;
-			TimerSet(PERIOD);
+			TimerSet(p);
 			TimerOn();
 
 		}

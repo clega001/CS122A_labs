@@ -12,9 +12,9 @@
     <OutputFileName>$(MSBuildProjectName)</OutputFileName>
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
-    <AssemblyName>clega001_jcent001_lab2_part4</AssemblyName>
-    <Name>clega001_jcent001_lab2_part4</Name>
-    <RootNamespace>clega001_jcent001_lab2_part4</RootNamespace>
+    <AssemblyName>lab3_part1_servant</AssemblyName>
+    <Name>lab3_part1_servant</Name>
+    <RootNamespace>lab3_part1_servant</RootNamespace>
     <ToolchainFlavour>Native</ToolchainFlavour>
     <KeepTimersRunning>true</KeepTimersRunning>
     <OverrideVtor>false</OverrideVtor>
@@ -99,7 +99,7 @@
   </avrgcc.compiler.symbols.DefSymbols>
   <avrgcc.compiler.directories.IncludePaths>
     <ListValues>
-      <Value>../../../../../includes</Value>
+      <Value>C:\Users\Christian Legaspino\Documents\includes</Value>
     </ListValues>
   </avrgcc.compiler.directories.IncludePaths>
   <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
