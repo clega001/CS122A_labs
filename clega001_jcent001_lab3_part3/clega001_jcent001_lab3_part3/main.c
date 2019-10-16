@@ -1,11 +1,13 @@
 /*
  * Christian Legaspino clega001@ucr.edu) & Joshua Centeno (jcent001@ucr.edu)
  * Lab Section: 23
- * Assignment: Lab 3 Exercise 2
+ * Assignment: Lab 3 Exercise 3
  *
  * I acknowledge all content contained herein, excluding template or example
  * code, is my own original work.
  */
+
+//Master
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -48,7 +50,9 @@ unsigned char key = 0x00;
 unsigned char pattern = 0x00;
 unsigned char speed = 0x00;
 unsigned char j = 0x00;
-unsigned char pat_spd = 0x06;
+unsigned char dis_pat = 0x00;
+unsigned char dis_spd = 0x00;
+unsigned char dis_uC = 0x01;
 unsigned char tmp = 0x00;
 //--------End Shared Variables------------------------------------------------
 //Master
@@ -106,79 +110,54 @@ int TickFct_Keypad(int state){
 			x = 0;
 			
 			//Set upper and lower bits
-			//Set upper and lower bits
 			if(key == '1'){
-				if(j == 0x01){
-					pattern = 0x01;
-					}else{speed = 0x01;}
-				}
+				dis_spd = 1;
+				speed = 0x01;
+			}
 			else if(key == '2'){
-				if(j == 0x01){
-					pattern = 0x02;
-				}else{speed = 0x02;}
+				dis_spd = 2;
+				speed = 0x02;
 			}
 			else if(key == '3'){
-				if(j == 0x01){
-					pattern = 0x03;
-				}else{speed = 0x03;}
+				dis_spd = 3;
+				speed = 0x03;
 			}
 			else if(key == '4'){
-				if(j == 0x04){
-					pattern = 0x04;
-				}else{speed = 0x04;}
+				dis_spd = 4;
+				speed = 0x04;
 			}
 			else if(key == '5'){
-				if(j == 0x01){
-					pattern = 0x05;
-				}else{speed = 0x05;}
+				dis_spd = 5;
+				speed = 0x05;
 			}
 			else if(key == '6'){
-				if(j == 0x01){
-					pattern = 0x06;
-					}else{speed = 0x06;}
+				dis_spd = 6;
+				speed = 0x06;
 			}
 			else if(key == '7'){
-				if(j == 0x01){
-					pattern = 0x07;
-				}else{speed = 0x07;}
+				dis_uC = 1;
 			}
 			else if(key == '8'){
-				if(j == 0x01){
-					pattern = 0x08;
-				}else{speed = 0x08;}
+				dis_uC = 2;
 			}
 			else if(key == '9'){
-				if(j == 0x01){
-					pattern = 0x09;
-				}else{speed = 0x09;}
+				dis_uC = 3;
 			}
 			else if(key == 'A'){
-				if(j == 0x01){
-						pattern = 0x0A;
-				}else{speed = 0x0A;}
+				dis_pat = 1;
+				pattern = 0x0A;
 			}
 			else if(key == 'B'){
-				if(j == 0x01){
-					pattern = 0x0B;
-					}else{speed = 0x0B;}
+				dis_pat = 2;
+				pattern = 0x0B;
 			}
 			else if(key == 'C'){
-				if(j == 0x01){
-					pattern = 0x0C;
-				}else{speed = 0x0C;}
+				dis_pat = 3;
+				pattern = 0x0C;
 			}
 			else if(key == 'D'){
-				if(j == 0x01){
-					pattern = 0x0D;
-				}else{speed = 0x0D;}
-			}
-			
-// 			//Switch between upper and lower bits
-			if(j == 0x00){
-				j = 0x01;
-			}
-			else if(j == 0x01){
-				j = 0x00;
+				dis_pat = 4;
+				pattern = 0x0D;
 			}
 			
 			//Test
@@ -205,11 +184,11 @@ int TickFct_LCD(){
 		case display:
 			LCD_DisplayString(1, "Ptrn:    Spd:     uC: ");
 			LCD_Cursor(7);
-			LCD_WriteData(3 + '0');
+			LCD_WriteData(dis_pat + '0');
 			LCD_Cursor(15);
-			LCD_WriteData(2 + '0');
+			LCD_WriteData(dis_spd + '0');
 			LCD_Cursor(23);
-			LCD_WriteData(2 + '0');
+			LCD_WriteData(1 + '0');
 			break;
 		default:
 			break;
@@ -230,7 +209,7 @@ DDRD = 0xF0; PORTD = 0x0F;
 
 
 // Period for the tasks
-unsigned long int SMTick1_calc = 50;
+unsigned long int SMTick1_calc = 10;
 unsigned long int SMTick2_calc = 1000;
 
 //Calculating GCD
@@ -283,6 +262,7 @@ while(1) {
         }
         tasks[i]->elapsedTime += 1;
     }
+
 	while(!TimerFlag);
 	TimerFlag = 0;
 }
