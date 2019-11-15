@@ -3,31 +3,31 @@ one.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000004  00800100  0000020a  0000029e  2**0
+  0 .data         00000004  00800100  00000278  0000030c  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  1 .text         0000020a  00000000  00000000  00000094  2**1
+  1 .text         00000278  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .bss          00000009  00800104  00800104  000002a2  2**0
+  2 .bss          00000009  00800104  00800104  00000310  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  000002a2  2**0
+  3 .comment      00000030  00000000  00000000  00000310  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  000002d4  2**2
+  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000340  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 00000070  00000000  00000000  00000314  2**0
+  5 .debug_aranges 00000070  00000000  00000000  00000380  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00000ba4  00000000  00000000  00000384  2**0
+  6 .debug_info   00000c00  00000000  00000000  000003f0  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 0000095e  00000000  00000000  00000f28  2**0
+  7 .debug_abbrev 0000096b  00000000  00000000  00000ff0  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   00000538  00000000  00000000  00001886  2**0
+  8 .debug_line   00000539  00000000  00000000  0000195b  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  000000f8  00000000  00000000  00001dc0  2**2
+  9 .debug_frame  000000f8  00000000  00000000  00001e94  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    000004de  00000000  00000000  00001eb8  2**0
+ 10 .debug_str    000004de  00000000  00000000  00001f8c  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    0000028b  00000000  00000000  00002396  2**0
+ 11 .debug_loc    00000245  00000000  00000000  0000246a  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000060  00000000  00000000  00002621  2**0
+ 12 .debug_ranges 00000060  00000000  00000000  000026af  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -116,7 +116,7 @@ Disassembly of section .text:
   98:	11 e0       	ldi	r17, 0x01	; 1
   9a:	a0 e0       	ldi	r26, 0x00	; 0
   9c:	b1 e0       	ldi	r27, 0x01	; 1
-  9e:	ea e0       	ldi	r30, 0x0A	; 10
+  9e:	e8 e7       	ldi	r30, 0x78	; 120
   a0:	f2 e0       	ldi	r31, 0x02	; 2
   a2:	00 e0       	ldi	r16, 0x00	; 0
   a4:	0b bf       	out	0x3b, r16	; 59
@@ -140,19 +140,19 @@ Disassembly of section .text:
   bc:	ad 30       	cpi	r26, 0x0D	; 13
   be:	b2 07       	cpc	r27, r18
   c0:	e1 f7       	brne	.-8      	; 0xba <.do_clear_bss_loop>
-  c2:	45 d0       	rcall	.+138    	; 0x14e <main>
-  c4:	a0 c0       	rjmp	.+320    	; 0x206 <_exit>
+  c2:	69 d0       	rcall	.+210    	; 0x196 <main>
+  c4:	d7 c0       	rjmp	.+430    	; 0x274 <_exit>
 
 000000c6 <__bad_interrupt>:
   c6:	9c cf       	rjmp	.-200    	; 0x0 <__vectors>
 
 000000c8 <__vector_13>:
-	//The code writes '1' but it result in setting bit to '0' !!!
-
-	ADCSRA|=(1<<ADIF);
-
-	return(ADC);
+	set_PWM(0);
 }
+
+void PWM_off() {
+	TCCR0A = 0x00;
+	TCCR0B = 0x00;
   c8:	1f 92       	push	r1
   ca:	0f 92       	push	r0
   cc:	0f b6       	in	r0, 0x3f	; 63
@@ -198,198 +198,275 @@ Disassembly of section .text:
  13e:	18 95       	reti
 
 00000140 <ADC_init>:
+//---------------------------------------------------------------------------
+
+//taken from http://extremeelectronics.co.in/avr-tutorials/using-adc-of-avr-microcontroller/
+void ADC_init()
+{
+	ADMUX=(1<<REFS1)|(1<<REFS0);                         // For Aref=AVcc;
  140:	80 ec       	ldi	r24, 0xC0	; 192
  142:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7e007c>
+	ADCSRA=(1<<ADEN)|(1<<ADIE)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0); //Rrescalar div factor =128
  146:	8f e8       	ldi	r24, 0x8F	; 143
  148:	80 93 7a 00 	sts	0x007A, r24	; 0x80007a <__TEXT_REGION_LENGTH__+0x7e007a>
  14c:	08 95       	ret
 
-0000014e <main>:
-
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-// Implement scheduler code from PES.
-int main(){
-	DDRA = 0x00; PORTA = 0xFF;
- 14e:	11 b8       	out	0x01, r1	; 1
- 150:	8f ef       	ldi	r24, 0xFF	; 255
- 152:	82 b9       	out	0x02, r24	; 2
-	DDRB = 0xFF; PORTB = 0x00;
- 154:	84 b9       	out	0x04, r24	; 4
- 156:	15 b8       	out	0x05, r1	; 5
-	DDRD = 0xFF; PORTD = 0x00;
- 158:	8a b9       	out	0x0a, r24	; 10
- 15a:	1b b8       	out	0x0b, r1	; 11
-// 	sei();
-// 	
-// 	ADCSRA |= (1<<ADSC); //Start ADC Conversion 
+0000014e <ReadADC>:
+uint16_t ReadADC(uint8_t ch)
+{
+	//Select ADC Channel ch must be 0-7
+	ch=ch&0b00000111;
 	
-	
-	ADC_init();
- 15c:	f1 df       	rcall	.-30     	; 0x140 <ADC_init>
-	ADMUX = 0xC2;
- 15e:	82 ec       	ldi	r24, 0xC2	; 194
- 160:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7e007c>
-	ADCSRA |= (1<<ADSC); //Start ADC Conversion 
- 164:	ea e7       	ldi	r30, 0x7A	; 122
- 166:	f0 e0       	ldi	r31, 0x00	; 0
- 168:	80 81       	ld	r24, Z
- 16a:	80 64       	ori	r24, 0x40	; 64
- 16c:	80 83       	st	Z, r24
-	
-
-	while(1) {
-		/*t = ReadADC(1);*/
-		t = ADC;
- 16e:	c8 e7       	ldi	r28, 0x78	; 120
- 170:	d0 e0       	ldi	r29, 0x00	; 0
-			}
-			else if(t > 100){
-				PORTB = 0x02;
-			}
-			else{
-				PORTB = 0x04;
- 172:	64 e0       	ldi	r22, 0x04	; 4
-		t = ADC;
-			if(t > 240){
-				PORTB = 0x01;
-			}
-			else if(t > 100){
-				PORTB = 0x02;
- 174:	52 e0       	ldi	r21, 0x02	; 2
-
-	while(1) {
-		/*t = ReadADC(1);*/
-		t = ADC;
-			if(t > 240){
-				PORTB = 0x01;
- 176:	41 e0       	ldi	r20, 0x01	; 1
-			else{
-				PORTB = 0x04;
-			}	
-			
-		_delay_ms(2);
-		ADMUX = 0xC4;
- 178:	ac e7       	ldi	r26, 0x7C	; 124
- 17a:	b0 e0       	ldi	r27, 0x00	; 0
- 17c:	34 ec       	ldi	r19, 0xC4	; 196
-			else{
-				PORTD = 0x04;
-			}
-
-		_delay_ms(2);
-		ADMUX = 0xC2;
- 17e:	22 ec       	ldi	r18, 0xC2	; 194
-	ADCSRA |= (1<<ADSC); //Start ADC Conversion 
-	
-
-	while(1) {
-		/*t = ReadADC(1);*/
-		t = ADC;
- 180:	88 81       	ld	r24, Y
- 182:	99 81       	ldd	r25, Y+1	; 0x01
- 184:	90 93 07 01 	sts	0x0107, r25	; 0x800107 <t+0x1>
- 188:	80 93 06 01 	sts	0x0106, r24	; 0x800106 <t>
-			if(t > 240){
- 18c:	81 3f       	cpi	r24, 0xF1	; 241
- 18e:	91 05       	cpc	r25, r1
- 190:	10 f0       	brcs	.+4      	; 0x196 <main+0x48>
-				PORTB = 0x01;
- 192:	45 b9       	out	0x05, r20	; 5
- 194:	06 c0       	rjmp	.+12     	; 0x1a2 <main+0x54>
-			}
-			else if(t > 100){
- 196:	85 36       	cpi	r24, 0x65	; 101
- 198:	91 05       	cpc	r25, r1
- 19a:	10 f0       	brcs	.+4      	; 0x1a0 <main+0x52>
-				PORTB = 0x02;
- 19c:	55 b9       	out	0x05, r21	; 5
- 19e:	01 c0       	rjmp	.+2      	; 0x1a2 <main+0x54>
-			}
-			else{
-				PORTB = 0x04;
- 1a0:	65 b9       	out	0x05, r22	; 5
+	ADMUX|=ch;
+ 14e:	ec e7       	ldi	r30, 0x7C	; 124
+ 150:	f0 e0       	ldi	r31, 0x00	; 0
+ 152:	90 81       	ld	r25, Z
+ 154:	87 70       	andi	r24, 0x07	; 7
+ 156:	98 2b       	or	r25, r24
+ 158:	90 83       	st	Z, r25
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
- 1a2:	83 ef       	ldi	r24, 0xF3	; 243
- 1a4:	91 e0       	ldi	r25, 0x01	; 1
- 1a6:	01 97       	sbiw	r24, 0x01	; 1
- 1a8:	f1 f7       	brne	.-4      	; 0x1a6 <main+0x58>
- 1aa:	00 c0       	rjmp	.+0      	; 0x1ac <main+0x5e>
- 1ac:	00 00       	nop
+ 15a:	89 ef       	ldi	r24, 0xF9	; 249
+ 15c:	90 e0       	ldi	r25, 0x00	; 0
+ 15e:	01 97       	sbiw	r24, 0x01	; 1
+ 160:	f1 f7       	brne	.-4      	; 0x15e <ReadADC+0x10>
+ 162:	00 c0       	rjmp	.+0      	; 0x164 <ReadADC+0x16>
+ 164:	00 00       	nop
+	
+	// I added here: allows time to switch between analog channels
+	_delay_ms(1);
+
+	//Start Single conversion
+	ADCSRA|=(1<<ADSC);
+ 166:	ea e7       	ldi	r30, 0x7A	; 122
+ 168:	f0 e0       	ldi	r31, 0x00	; 0
+ 16a:	80 81       	ld	r24, Z
+ 16c:	80 64       	ori	r24, 0x40	; 64
+ 16e:	80 83       	st	Z, r24
+ 170:	89 ef       	ldi	r24, 0xF9	; 249
+ 172:	90 e0       	ldi	r25, 0x00	; 0
+ 174:	01 97       	sbiw	r24, 0x01	; 1
+ 176:	f1 f7       	brne	.-4      	; 0x174 <ReadADC+0x26>
+ 178:	00 c0       	rjmp	.+0      	; 0x17a <ReadADC+0x2c>
+ 17a:	00 00       	nop
+	
+	_delay_ms(1);
+
+	//Wait for conversion to complete
+	while(!(ADCSRA & (1<<ADIF)));
+ 17c:	80 81       	ld	r24, Z
+ 17e:	84 ff       	sbrs	r24, 4
+ 180:	fd cf       	rjmp	.-6      	; 0x17c <ReadADC+0x2e>
+	//Clear ADIF by writing one to it
+	//Note you may be wondering why we have write one to clear it
+	//This is standard way of clearing bits in io as said in datasheets.
+	//The code writes '1' but it result in setting bit to '0' !!!
+
+	ADCSRA|=(1<<ADIF);
+ 182:	ea e7       	ldi	r30, 0x7A	; 122
+ 184:	f0 e0       	ldi	r31, 0x00	; 0
+ 186:	80 81       	ld	r24, Z
+ 188:	80 61       	ori	r24, 0x10	; 16
+ 18a:	80 83       	st	Z, r24
+
+	return(ADC);
+ 18c:	80 91 78 00 	lds	r24, 0x0078	; 0x800078 <__TEXT_REGION_LENGTH__+0x7e0078>
+ 190:	90 91 79 00 	lds	r25, 0x0079	; 0x800079 <__TEXT_REGION_LENGTH__+0x7e0079>
+}
+ 194:	08 95       	ret
+
+00000196 <main>:
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+// Implement scheduler code from PES.
+int main(){
+	DDRA = 0x00; PORTA = 0xFF;
+ 196:	11 b8       	out	0x01, r1	; 1
+ 198:	8f ef       	ldi	r24, 0xFF	; 255
+ 19a:	82 b9       	out	0x02, r24	; 2
+	DDRB = 0xFF; PORTB = 0x00;
+ 19c:	84 b9       	out	0x04, r24	; 4
+ 19e:	15 b8       	out	0x05, r1	; 5
+	DDRD = 0xFF; PORTD = 0x00;
+ 1a0:	8a b9       	out	0x0a, r24	; 10
+ 1a2:	1b b8       	out	0x0b, r1	; 11
+// 	sei();
+// 	
+// 	ADCSRA |= (1<<ADSC); //Start ADC Conversion 
+	
+	
+	ADC_init();
+ 1a4:	cd df       	rcall	.-102    	; 0x140 <ADC_init>
+	ADMUX = 0xC1;
+ 1a6:	81 ec       	ldi	r24, 0xC1	; 193
+ 1a8:	80 93 7c 00 	sts	0x007C, r24	; 0x80007c <__TEXT_REGION_LENGTH__+0x7e007c>
+	ADCSRA |= (1<<ADSC); //Start ADC Conversion
+ 1ac:	ea e7       	ldi	r30, 0x7A	; 122
+ 1ae:	f0 e0       	ldi	r31, 0x00	; 0
+ 1b0:	80 81       	ld	r24, Z
+ 1b2:	80 64       	ori	r24, 0x40	; 64
+ 1b4:	80 83       	st	Z, r24
+ 1b6:	81 ee       	ldi	r24, 0xE1	; 225
+ 1b8:	94 e0       	ldi	r25, 0x04	; 4
+ 1ba:	01 97       	sbiw	r24, 0x01	; 1
+ 1bc:	f1 f7       	brne	.-4      	; 0x1ba <main+0x24>
+ 1be:	00 c0       	rjmp	.+0      	; 0x1c0 <main+0x2a>
+ 1c0:	00 00       	nop
+			}
+			else if(t > 100){
+				PORTB = 0x02;
+			}
+			else{
+				PORTB = 0x04;
+ 1c2:	68 94       	set
+ 1c4:	cc 24       	eor	r12, r12
+ 1c6:	c2 f8       	bld	r12, 2
+		//t = ADC;
+			if(t > 240){
+				PORTB = 0x01;
+			}
+			else if(t > 100){
+				PORTB = 0x02;
+ 1c8:	68 94       	set
+ 1ca:	ff 24       	eor	r15, r15
+ 1cc:	f1 f8       	bld	r15, 1
+			else{
+				PORTB = 0x04;
 			}	
 			
-		_delay_ms(2);
-		ADMUX = 0xC4;
- 1ae:	3c 93       	st	X, r19
- 1b0:	83 ef       	ldi	r24, 0xF3	; 243
- 1b2:	91 e0       	ldi	r25, 0x01	; 1
- 1b4:	01 97       	sbiw	r24, 0x01	; 1
- 1b6:	f1 f7       	brne	.-4      	; 0x1b4 <main+0x66>
- 1b8:	00 c0       	rjmp	.+0      	; 0x1ba <main+0x6c>
- 1ba:	00 00       	nop
-		_delay_ms(2);
+		_delay_ms(10);
+		ADMUX = 0xC2;
+ 1ce:	0c e7       	ldi	r16, 0x7C	; 124
+ 1d0:	10 e0       	ldi	r17, 0x00	; 0
+ 1d2:	0f 2e       	mov	r0, r31
+ 1d4:	f2 ec       	ldi	r31, 0xC2	; 194
+ 1d6:	df 2e       	mov	r13, r31
+ 1d8:	f0 2d       	mov	r31, r0
 		ADCSRA |= (1<<ADSC);
- 1bc:	80 81       	ld	r24, Z
- 1be:	80 64       	ori	r24, 0x40	; 64
- 1c0:	80 83       	st	Z, r24
+ 1da:	ca e7       	ldi	r28, 0x7A	; 122
+ 1dc:	d0 e0       	ldi	r29, 0x00	; 0
+			else{
+				PORTD = 0x04;
+			}
+
+		_delay_ms(10);
+		ADMUX = 0xC1;
+ 1de:	0f 2e       	mov	r0, r31
+ 1e0:	f1 ec       	ldi	r31, 0xC1	; 193
+ 1e2:	ef 2e       	mov	r14, r31
+ 1e4:	f0 2d       	mov	r31, r0
+	ADCSRA |= (1<<ADSC); //Start ADC Conversion
+	_delay_ms(5); 
+	
+
+	while(1) {
+		t = ReadADC(1);
+ 1e6:	81 e0       	ldi	r24, 0x01	; 1
+ 1e8:	b2 df       	rcall	.-156    	; 0x14e <ReadADC>
+ 1ea:	90 93 07 01 	sts	0x0107, r25	; 0x800107 <t+0x1>
+ 1ee:	80 93 06 01 	sts	0x0106, r24	; 0x800106 <t>
+		//t = ADC;
+			if(t > 240){
+ 1f2:	81 3f       	cpi	r24, 0xF1	; 241
+ 1f4:	91 05       	cpc	r25, r1
+ 1f6:	18 f0       	brcs	.+6      	; 0x1fe <main+0x68>
+				PORTB = 0x01;
+ 1f8:	81 e0       	ldi	r24, 0x01	; 1
+ 1fa:	85 b9       	out	0x05, r24	; 5
+ 1fc:	06 c0       	rjmp	.+12     	; 0x20a <main+0x74>
+			}
+			else if(t > 100){
+ 1fe:	85 36       	cpi	r24, 0x65	; 101
+ 200:	91 05       	cpc	r25, r1
+ 202:	10 f0       	brcs	.+4      	; 0x208 <main+0x72>
+				PORTB = 0x02;
+ 204:	f5 b8       	out	0x05, r15	; 5
+ 206:	01 c0       	rjmp	.+2      	; 0x20a <main+0x74>
+			}
+			else{
+				PORTB = 0x04;
+ 208:	c5 b8       	out	0x05, r12	; 5
+ 20a:	e3 ec       	ldi	r30, 0xC3	; 195
+ 20c:	f9 e0       	ldi	r31, 0x09	; 9
+ 20e:	31 97       	sbiw	r30, 0x01	; 1
+ 210:	f1 f7       	brne	.-4      	; 0x20e <main+0x78>
+ 212:	00 c0       	rjmp	.+0      	; 0x214 <main+0x7e>
+ 214:	00 00       	nop
+			}	
+			
+		_delay_ms(10);
+		ADMUX = 0xC2;
+ 216:	f8 01       	movw	r30, r16
+ 218:	d0 82       	st	Z, r13
+		ADCSRA |= (1<<ADSC);
+ 21a:	88 81       	ld	r24, Y
+ 21c:	80 64       	ori	r24, 0x40	; 64
+ 21e:	88 83       	st	Y, r24
+ 220:	81 ee       	ldi	r24, 0xE1	; 225
+ 222:	94 e0       	ldi	r25, 0x04	; 4
+ 224:	01 97       	sbiw	r24, 0x01	; 1
+ 226:	f1 f7       	brne	.-4      	; 0x224 <main+0x8e>
+ 228:	00 c0       	rjmp	.+0      	; 0x22a <main+0x94>
+		_delay_ms(5);
 		
-		/*k = ReadADC(2);*/
-		k = ADC;
- 1c2:	88 81       	ld	r24, Y
- 1c4:	99 81       	ldd	r25, Y+1	; 0x01
- 1c6:	90 93 05 01 	sts	0x0105, r25	; 0x800105 <__data_end+0x1>
- 1ca:	80 93 04 01 	sts	0x0104, r24	; 0x800104 <__data_end>
+		k = ReadADC(2);
+ 22a:	00 00       	nop
+ 22c:	8f 2d       	mov	r24, r15
+ 22e:	8f df       	rcall	.-226    	; 0x14e <ReadADC>
+ 230:	90 93 05 01 	sts	0x0105, r25	; 0x800105 <__data_end+0x1>
+ 234:	80 93 04 01 	sts	0x0104, r24	; 0x800104 <__data_end>
+		//k = ADC;
 			if(k > 240){
- 1ce:	81 3f       	cpi	r24, 0xF1	; 241
- 1d0:	91 05       	cpc	r25, r1
- 1d2:	10 f0       	brcs	.+4      	; 0x1d8 <main+0x8a>
+ 238:	81 3f       	cpi	r24, 0xF1	; 241
+ 23a:	91 05       	cpc	r25, r1
+ 23c:	18 f0       	brcs	.+6      	; 0x244 <main+0xae>
 				PORTD = 0x01;
- 1d4:	4b b9       	out	0x0b, r20	; 11
- 1d6:	06 c0       	rjmp	.+12     	; 0x1e4 <main+0x96>
+ 23e:	81 e0       	ldi	r24, 0x01	; 1
+ 240:	8b b9       	out	0x0b, r24	; 11
+ 242:	06 c0       	rjmp	.+12     	; 0x250 <main+0xba>
 			}
 			else if(k > 100){
- 1d8:	85 36       	cpi	r24, 0x65	; 101
- 1da:	91 05       	cpc	r25, r1
- 1dc:	10 f0       	brcs	.+4      	; 0x1e2 <main+0x94>
+ 244:	85 36       	cpi	r24, 0x65	; 101
+ 246:	91 05       	cpc	r25, r1
+ 248:	10 f0       	brcs	.+4      	; 0x24e <main+0xb8>
 				PORTD = 0x02;
- 1de:	5b b9       	out	0x0b, r21	; 11
- 1e0:	01 c0       	rjmp	.+2      	; 0x1e4 <main+0x96>
+ 24a:	fb b8       	out	0x0b, r15	; 11
+ 24c:	01 c0       	rjmp	.+2      	; 0x250 <main+0xba>
 			}
 			else{
 				PORTD = 0x04;
- 1e2:	6b b9       	out	0x0b, r22	; 11
- 1e4:	83 ef       	ldi	r24, 0xF3	; 243
- 1e6:	91 e0       	ldi	r25, 0x01	; 1
- 1e8:	01 97       	sbiw	r24, 0x01	; 1
- 1ea:	f1 f7       	brne	.-4      	; 0x1e8 <main+0x9a>
- 1ec:	00 c0       	rjmp	.+0      	; 0x1ee <main+0xa0>
- 1ee:	00 00       	nop
+ 24e:	cb b8       	out	0x0b, r12	; 11
+ 250:	e3 ec       	ldi	r30, 0xC3	; 195
+ 252:	f9 e0       	ldi	r31, 0x09	; 9
+ 254:	31 97       	sbiw	r30, 0x01	; 1
+ 256:	f1 f7       	brne	.-4      	; 0x254 <main+0xbe>
+ 258:	00 c0       	rjmp	.+0      	; 0x25a <main+0xc4>
+ 25a:	00 00       	nop
 			}
 
-		_delay_ms(2);
-		ADMUX = 0xC2;
- 1f0:	2c 93       	st	X, r18
- 1f2:	83 ef       	ldi	r24, 0xF3	; 243
- 1f4:	91 e0       	ldi	r25, 0x01	; 1
- 1f6:	01 97       	sbiw	r24, 0x01	; 1
- 1f8:	f1 f7       	brne	.-4      	; 0x1f6 <main+0xa8>
- 1fa:	00 c0       	rjmp	.+0      	; 0x1fc <main+0xae>
- 1fc:	00 00       	nop
-		_delay_ms(2);
+		_delay_ms(10);
+		ADMUX = 0xC1;
+ 25c:	f8 01       	movw	r30, r16
+ 25e:	e0 82       	st	Z, r14
 		ADCSRA |= (1<<ADSC);
- 1fe:	80 81       	ld	r24, Z
- 200:	80 64       	ori	r24, 0x40	; 64
- 202:	80 83       	st	Z, r24
-	}
- 204:	bd cf       	rjmp	.-134    	; 0x180 <main+0x32>
+ 260:	88 81       	ld	r24, Y
+ 262:	80 64       	ori	r24, 0x40	; 64
+ 264:	88 83       	st	Y, r24
+ 266:	81 ee       	ldi	r24, 0xE1	; 225
+ 268:	94 e0       	ldi	r25, 0x04	; 4
+ 26a:	01 97       	sbiw	r24, 0x01	; 1
+ 26c:	f1 f7       	brne	.-4      	; 0x26a <main+0xd4>
+ 26e:	00 c0       	rjmp	.+0      	; 0x270 <main+0xda>
+ 270:	00 00       	nop
+ 272:	b9 cf       	rjmp	.-142    	; 0x1e6 <main+0x50>
 
-00000206 <_exit>:
- 206:	f8 94       	cli
+00000274 <_exit>:
+ 274:	f8 94       	cli
 
-00000208 <__stop_program>:
- 208:	ff cf       	rjmp	.-2      	; 0x208 <__stop_program>
+00000276 <__stop_program>:
+ 276:	ff cf       	rjmp	.-2      	; 0x276 <__stop_program>
