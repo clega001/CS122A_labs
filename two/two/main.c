@@ -50,16 +50,32 @@ int main(){
 	DDRC = 0xFF; PORTC = 0x00;
 	DDRD = 0xFF; PORTD = 0x00;
 
- 	initUSART(0);
+	initUSART(0);
+	ADC_init();
 	
-	while(1) {		
-		if(b){
+	while(1) {
+// 		if(b){
+// 			PORTD = 0x80;
+// 			USART_Send(0xFF, 0);
+// 			_delay_ms(100);
+// 		} else {
+// 			PORTD = 0x00;
+// 			USART_Send(0x00, 0);
+// 			_delay_ms(100);
+// 		}
+
+	ADMUX = 0xC0;
+	ADCSRA |= (1<<ADSC);
+	_delay_ms(5);
+
+	a = ReadADC(0);
+		if(a > 100){
+			PORTD = 0x00;
+/*			USART_Send(0x00, 0);*/
+			_delay_ms(100);
+		}else{
 			PORTD = 0x80;
 			USART_Send(0xFF, 0);
-			_delay_ms(100);
-		} else {
-			PORTD = 0x00;
-			USART_Send(0x00, 0);
 			_delay_ms(100);
 		}
 

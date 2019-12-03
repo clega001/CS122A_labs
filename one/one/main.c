@@ -40,6 +40,8 @@ uint16_t ReadADC(uint8_t ch){//I added the small delays
 	return(ADC);
 }
 
+
+
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 int main(){
@@ -47,9 +49,6 @@ int main(){
 	DDRC = 0xFF; PORTC = 0x00;
 
 	ADC_init();
-// 	ADMUX = 0xC0;
-// 	ADCSRA |= (1<<ADSC); //Start ADC Conversion
-// 	_delay_ms(5); 
 	
 	while(1) {
 		ADMUX = 0xC0;
@@ -141,12 +140,12 @@ int main(){
 		_delay_ms(5);
 		
 		h = ReadADC(7);
-		if(h > 150){
-			PORTC = 0x00;
-		}
-		else{
-			PORTC = 0x01;
-		}
+			if(h > 150){
+				PORTC = 0x00;
+			}
+			else{
+				PORTC = 0x01;
+			}
 	}
 	return 0;
 }

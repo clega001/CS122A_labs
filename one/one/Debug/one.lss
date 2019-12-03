@@ -275,6 +275,7 @@ uint16_t ReadADC(uint8_t ch){//I added the small delays
 
 00000196 <main>:
 
+
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 int main(){
@@ -288,9 +289,6 @@ int main(){
 
 	ADC_init();
  1a0:	cf df       	rcall	.-98     	; 0x140 <ADC_init>
-// 	ADMUX = 0xC0;
-// 	ADCSRA |= (1<<ADSC); //Start ADC Conversion
-// 	_delay_ms(5); 
 	
 	while(1) {
 		ADMUX = 0xC0;
@@ -398,9 +396,9 @@ int main(){
  204:	f7 e0       	ldi	r31, 0x07	; 7
  206:	ff 2e       	mov	r15, r31
  208:	f0 2d       	mov	r31, r0
-// 	ADMUX = 0xC0;
-// 	ADCSRA |= (1<<ADSC); //Start ADC Conversion
-// 	_delay_ms(5); 
+	DDRC = 0xFF; PORTC = 0x00;
+
+	ADC_init();
 	
 	while(1) {
 		ADMUX = 0xC0;
@@ -657,16 +655,16 @@ int main(){
  36a:	f1 de       	rcall	.-542    	; 0x14e <ReadADC>
  36c:	90 93 14 01 	sts	0x0114, r25	; 0x800114 <h+0x1>
  370:	80 93 13 01 	sts	0x0113, r24	; 0x800113 <h>
-		if(h > 150){
+			if(h > 150){
  374:	87 39       	cpi	r24, 0x97	; 151
  376:	91 05       	cpc	r25, r1
  378:	10 f0       	brcs	.+4      	; 0x37e <main+0x1e8>
-			PORTC = 0x00;
+				PORTC = 0x00;
  37a:	18 b8       	out	0x08, r1	; 8
  37c:	46 cf       	rjmp	.-372    	; 0x20a <main+0x74>
-		}
-		else{
-			PORTC = 0x01;
+			}
+			else{
+				PORTC = 0x01;
  37e:	81 e0       	ldi	r24, 0x01	; 1
  380:	88 b9       	out	0x08, r24	; 8
  382:	43 cf       	rjmp	.-378    	; 0x20a <main+0x74>
