@@ -85,7 +85,7 @@ void TimerSet(unsigned long M) {
 unsigned char color = 0x00;
 unsigned char limit = 10;
 unsigned char cnt = 0;
-unsigned char ready = 0x00;
+unsigned char speed = 0x00;
 
 //State Machines
 enum blinkState{init, on, off} state;
@@ -118,6 +118,7 @@ int blink(int state){
 					TimerOff();
 					tasks[1].period = 1000;
 					color = 0x01;
+					speed = 0x00;
 					TimerOn();
 				} else {
 					PORTA = 0x02;
@@ -158,11 +159,12 @@ int readUSART(int s){
 			else if(GetBit(r,1)){
 				TimerOff();
 				tasks[1].period = 100;
+				speed = 0x01;
 				TimerSet(PERIOD);
 				TimerOn();
-				break;			
+				break;
 			}
-			else if(GetBit(r,0)){
+			else if(GetBit(r,0) && !speed){
 				TimerOff();
 				tasks[1].period = 500;
 				TimerSet(PERIOD);

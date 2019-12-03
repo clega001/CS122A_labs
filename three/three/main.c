@@ -79,7 +79,9 @@ int main(){
 	DDRB = 0xFF; PORTB = 0x00;
 	DDRC = 0xFF; PORTC = 0x00;
 	DDRD = 0xF0, PORTD = 0x00;
+	
 	unsigned char data = 0x00;
+	
 	PWM_init();
 	ADC_init();
 	initUSART(0);
@@ -106,15 +108,12 @@ int main(){
 			if(b > 150){
 				PORTC = 0x00;
 				data = SetBit(data, 0, 0);
-				//USART_Send(0x00, 0);
 			}
 			else{
 				data = SetBit(data, 0, 1);
 				PORTC = 0x70;
-				//USART_Send(0x01, 0);
 			}
-// 		USART_Send(data, 0);
-// 		_delay_ms(250);
+
 		ADMUX = 0xC2;
 		ADCSRA |= (1<<ADSC);
 		_delay_ms(5);
@@ -138,6 +137,7 @@ int main(){
 			else{
 				PORTC = 0x1C;
 			}
+			
 		ADMUX = 0xC4;
 		ADCSRA |= (1<<ADSC);
 		_delay_ms(5);
@@ -146,15 +146,11 @@ int main(){
 			if(e > 150){
 				PORTC = 0x00;
 				data = SetBit(data, 1, 0);
-				//USART_Send(0x00, 0);
 			}
 			else{
 				PORTC = 0x0E;
 				data = SetBit(data, 1, 1);
-				//USART_Send(0x02, 0);
 			}
-// 		USART_Send(data, 0);
-// 		_delay_ms(250);
 
 		ADMUX = 0xC5;
 		ADCSRA |= (1<<ADSC);
@@ -188,19 +184,15 @@ int main(){
 				cnt = 0;
 				PORTC = 0x00;
 				data = SetBit(data, 2, 0);
-				//USART_Send(0x00,0);
 			}
 			else{
-				if(cnt >= 500){
+				if(cnt >= 100){
 					data = SetBit(data, 2, 1);
-					//USART_Send(data,0);
-					PORTC = 0xFF;
 				} else {
 					cnt += 1;
 					PORTC = 0x01;
 				}
 				
-				//PORTC = 0x01;
 			}
 			USART_Send(data, 0);
 			_delay_ms(100);	
